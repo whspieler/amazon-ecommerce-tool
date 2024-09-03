@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Product Comparison</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Amazon Product Comparison Tool</h1>
+        <form id="url-form">
+            <input type="text" id="url-input" placeholder="Enter Amazon Product URL" required>
+            <button type="submit">Compare Products</button>
+        </form>
+
+        <!-- Loading indicator -->
+        <div id="loading-indicator">Loading...</div>
+
+        <!-- Product comparison table -->
+        <div class="comparison-container" id="comparison-container"></div>
+    </div>
+
+    <!-- Include your custom JavaScript file -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
