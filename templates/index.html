@@ -10,13 +10,21 @@
 <body>
     <div class="container">
         <h1>Amazon Product Comparison Tool</h1>
+        
+        <!-- URL Input Form -->
         <form id="url-form">
             <input type="text" id="url-input" placeholder="Enter Amazon Product URL" required>
             <button type="submit">Compare Products</button>
         </form>
 
+        <!-- Sorting options -->
+        <div class="sorting-options">
+            <button id="sort-price">Sort by Price</button>
+            <button id="sort-rating">Sort by Rating</button>
+        </div>
+
         <!-- Loading indicator -->
-        <div id="loading-indicator">Loading...</div>
+        <div id="loading-indicator" class="loading-indicator" style="display: none;">Loading...</div>
 
         <!-- Product comparison table -->
         <div class="comparison-container" id="comparison-container"></div>

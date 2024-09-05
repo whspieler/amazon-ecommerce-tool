@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from scraper import compare_product, extract_asin
+from scraper import compare_product, extract_id  # Update import to extract_id
 from database import insert_comparison, create_database
 import sqlite3
 
@@ -17,7 +17,7 @@ def compare_products():
     try:
         data = request.json
         url = data['url']
-        product_id = extract_asin(url)
+        product_id = extract_id(url)  # Use extract_id instead of extract_asin
 
         # Get comparison data using PriceAPI
         comparison_data = compare_product(product_id)
