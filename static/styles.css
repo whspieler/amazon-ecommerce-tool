@@ -18,6 +18,7 @@ body {
     max-width: 1200px;
     text-align: center;
     margin-top: 20px;
+    position: relative; /* Ensure position control for toggle */
 }
 
 input[type="text"] {
@@ -39,8 +40,11 @@ button {
     transition: background-color 0.3s;
 }
 
+/* Remove hover changes to ensure the button looks the same */
 button:hover {
-    background-color: #0056b3;
+    background-color: #007bff;
+    color: white;
+    border: none;
 }
 
 #loading-indicator {
@@ -52,18 +56,63 @@ button:hover {
     font-weight: bold;
 }
 
-.sorting-options {
-    margin: 20px 0;
-    display: flex;
-    justify-content: center;
-    gap: 10px;
+/* Hide by default and show after fetching */
+.original-product-section,
+.comparison-container {
+    display: none;
 }
 
-.comparison-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
+.original-product img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+h2, h3 {
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+h3 {
+    font-size: 22px;
+}
+
+/* Toggle Box Styling */
+.toggle-box {
+    background-color: #a9daea; /* Light blue background */
+    color: #000; /* Darker text for contrast */
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 30px;
+    display: block;
+    text-align: center; /* Center the text */
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 18px;
+    transition: background-color 0.3s;
+}
+
+.toggle-box:hover {
+    background-color: #a9daea;
+    color: white;
+}
+
+.toggle-arrow {
+    display: inline-block;
+    font-size: 24px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* Product section styling */
+.other-products {
+    display: none;
     margin-top: 20px;
+    grid-template-columns: repeat(4, 1fr); /* Display 4 products side by side */
+    gap: 15px;
+    background-color: transparent; /* Ensure the background is transparent after expanding */
 }
 
 .product {
@@ -73,6 +122,10 @@ button:hover {
     border-radius: 8px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s, box-shadow 0.2s;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .product:hover {
@@ -84,6 +137,9 @@ button:hover {
     font-size: 18px;
     margin-bottom: 10px;
     color: #333;
+    font-weight: bold;
+    min-height: 60px;
+    line-height: 1.4;
 }
 
 .product p {
@@ -93,35 +149,38 @@ button:hover {
     line-height: 1.4;
 }
 
-.product ul {
-    list-style-type: disc;
-    padding-left: 20px;
-    text-align: left;
-    margin-top: 10px;
-    color: #333;
-}
-
-.product ul li {
-    font-size: 14px;
-    color: #333;
-}
-
-.product a {
-    display: inline-block;
-    margin-top: 10px;
-    text-decoration: none;
-    color: #007bff;
-    font-weight: bold;
-}
-
-.product a:hover {
-    text-decoration: underline;
-}
-
-/* Ensuring images are styled properly */
+/* Ensure images fit well */
 .product img {
     max-width: 100%;
     height: auto;
     border-radius: 8px;
     margin-bottom: 10px;
+    max-height: 200px;
+    object-fit: contain;
+}
+
+/* Center the features bullet points */
+.product ul {
+    list-style-type: none;
+    padding-left: 0;
+    text-align: center; /* Center the bullet points */
+    margin-top: 10px;
+    color: #333; /* Ensure text is black */
+}
+
+/* Ensure consistent layout for buttons */
+button {
+    margin-top: 15px;
+}
+
+/* Responsive layout */
+@media screen and (max-width: 768px) {
+    .comparison-container {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .other-products {
+        grid-template-columns: 1fr;
+    }
 }

@@ -17,17 +17,27 @@
             <button type="submit">Compare Products</button>
         </form>
 
-        <!-- Sorting options -->
-        <div class="sorting-options">
-            <button id="sort-price">Sort by Price</button>
-            <button id="sort-rating">Sort by Rating</button>
-        </div>
-
         <!-- Loading indicator -->
         <div id="loading-indicator" class="loading-indicator" style="display: none;">Loading...</div>
 
-        <!-- Product comparison table -->
-        <div class="comparison-container" id="comparison-container"></div>
+        <!-- Original Product Display -->
+        <div class="original-product-section" style="display: none;">
+            <h2>Your Product:</h2>
+            <div class="original-product" id="original-product">
+                <!-- This will be populated with the original product details -->
+            </div>
+        </div>
+
+        <!-- Toggleable Other Products Section -->
+        <div class="toggle-box" id="toggle-header" style="display: none;">
+            Other Products You Should Consider
+            <span class="toggle-arrow">▼</span>
+        </div>
+
+        <!-- Other Products Container (Hidden by default) -->
+        <div class="comparison-container" id="comparison-container" style="display: none;">
+            <!-- This will be populated with other product details -->
+        </div>
     </div>
 
     <!-- Include your custom JavaScript file -->
