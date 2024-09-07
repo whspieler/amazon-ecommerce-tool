@@ -26,6 +26,7 @@ document.getElementById('url-form').addEventListener('submit', async function (e
             clearPreviousContent();  // Clear any previous product or comparison content
             displayOriginalProduct(data.comparison[0]); // Display the original product first
             displayToggleableComparison(data.comparison.slice(1)); // Display other products toggleable
+            displayProductAnalysis(data.comparison); // Display product analysis (new feature)
 
             // Show "Your Product" section
             document.querySelector('.original-product-section').style.display = 'block';
@@ -46,8 +47,10 @@ document.getElementById('url-form').addEventListener('submit', async function (e
 function clearPreviousContent() {
     const comparisonContainer = document.getElementById('comparison-container');
     const originalProductSection = document.getElementById('original-product');
+    const analysisSection = document.getElementById('analysis-container');
     comparisonContainer.innerHTML = '';  // Clear other products
     originalProductSection.innerHTML = ''; // Clear original product content
+    analysisSection.innerHTML = ''; // Clear previous analysis content
 
     // Only remove the toggle box if it already exists to avoid duplicates
     const existingToggleBox = document.querySelector('.toggle-box');
@@ -99,22 +102,24 @@ function displayOriginalProduct(product) {
     link.innerText = "View Product";
     link.target = "_blank";
 
-    // Display product features if available
-    if (product.features && product.features.length > 0) {
-        const featuresTitle = document.createElement('p');
-        featuresTitle.innerText = 'Features:';
-        featuresTitle.style.fontWeight = 'bold';
+    // Display only the summarized key features (3 bullet points)
+    if (product.features_summary && product.features_summary.length > 0) {
+        const summaryTitle = document.createElement('p');
+        summaryTitle.innerText = 'Key Features:';
+        summaryTitle.style.fontWeight = 'bold';
 
-        const featuresList = document.createElement('ul');
-        product.features.forEach(feature => {
-            const featureItem = document.createElement('li');
-            featureItem.innerText = feature;
-            featuresList.appendChild(featureItem);
+        const summaryList = document.createElement('ul');
+        product.features_summary.forEach(summary => {
+            const summaryItem = document.createElement('li');
+            summaryItem.innerText = summary;
+            summaryList.appendChild(summaryItem);
         });
 
-        productDiv.appendChild(featuresTitle);
-        productDiv.appendChild(featuresList);
+        productDiv.appendChild(summaryTitle);
+        productDiv.appendChild(summaryList);
     }
+
+    // No "All Features" display here
 
     productDiv.appendChild(name);
     productDiv.appendChild(price);
@@ -219,21 +224,21 @@ function displayToggleableComparison(comparison) {
         link.innerText = "View Product";
         link.target = "_blank";
 
-        // Display product features if available
-        if (product.features && product.features.length > 0) {
-            const featuresTitle = document.createElement('p');
-            featuresTitle.innerText = 'Features:';
-            featuresTitle.style.fontWeight = 'bold';
+        // Display only the summarized key features (3 bullet points)
+        if (product.features_summary && product.features_summary.length > 0) {
+            const summaryTitle = document.createElement('p');
+            summaryTitle.innerText = 'Key Features:';
+            summaryTitle.style.fontWeight = 'bold';
 
-            const featuresList = document.createElement('ul');
-            product.features.forEach(feature => {
-                const featureItem = document.createElement('li');
-                featureItem.innerText = feature;
-                featuresList.appendChild(featureItem);
+            const summaryList = document.createElement('ul');
+            product.features_summary.forEach(summary => {
+                const summaryItem = document.createElement('li');
+                summaryItem.innerText = summary;
+                summaryList.appendChild(summaryItem);
             });
 
-            productDiv.appendChild(featuresTitle);
-            productDiv.appendChild(featuresList);
+            productDiv.appendChild(summaryTitle);
+            productDiv.appendChild(summaryList);
         }
 
         productDiv.appendChild(name);
@@ -251,4 +256,66 @@ function displayToggleableComparison(comparison) {
 
     // Add the product container to the comparison container
     comparisonContainer.appendChild(otherProductsContainer);
+}
+
+// New function to display product analysis
+function displayProductAnalysis(comparison) {
+    const analysisContainer = document.getElementById('analysis-container');
+
+    // Create a toggle box for the analysis section
+    let analysisToggleBox = document.querySelector('.analysis-toggle-box');
+    if (!analysisToggleBox) {
+        analysisToggleBox = document.createElement('div');
+        analysisToggleBox.classList.add('analysis-toggle-box');
+
+        const toggleHeader = document.createElement('div');
+        toggleHeader.classList.add('toggle-header');
+        toggleHeader.innerText = 'Which Product is Best For You?';
+
+        // Add arrow icon
+        const arrow = document.createElement('span');
+        arrow.innerHTML = '▼';
+        arrow.classList.add('toggle-arrow');
+        toggleHeader.appendChild(arrow);
+
+        // Add the header to the toggleBox
+        analysisToggleBox.appendChild(toggleHeader);
+
+        // Add the toggleBox before the analysis container
+        analysisContainer.parentNode.insertBefore(analysisToggleBox, analysisContainer);
+
+        // Initially hide the analysis container
+        analysisContainer.style.display = 'none';
+
+        // Toggle event to show/hide analysis
+        toggleHeader.addEventListener('click', function () {
+            if (analysisContainer.style.display === 'none') {
+                analysisContainer.style.display = 'block';
+                arrow.innerHTML = '▲'; // Change arrow direction
+            } else {
+                analysisContainer.style.display = 'none';
+                arrow.innerHTML = '▼'; // Change arrow direction
+            }
+        });
+    }
+
+    // Clear previous content
+    analysisContainer.innerHTML = '';
+
+    // Create analysis details for each product
+    comparison.forEach(product => {
+        const analysisDiv = document.createElement('div');
+        analysisDiv.classList.add('analysis-product');
+
+        const name = document.createElement('h3');
+        name.innerText = `${product.name}: Pros and Cons`;
+
+        const analysisText = document.createElement('p');
+        analysisText.innerText = product.analysis || 'No analysis available.';
+
+        analysisDiv.appendChild(name);
+        analysisDiv.appendChild(analysisText);
+
+        analysisContainer.appendChild(analysisDiv);
+    });
 }

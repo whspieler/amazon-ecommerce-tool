@@ -166,46 +166,76 @@ def filter_and_fetch_different_brand_products(additional_data, original_brand):
 
 def summarize_features_with_groq(features):
     """
-    Summarize product features using Groq API.
+    Summarizes the product features into three concise bullet points using Groq API.
     """
     try:
-        # Combine all feature bullet points into a single text
-        text = ' '.join(features)
-        
-        # Make a Groq API call to summarize the features, request only 3 bullet points
+        features_text = "; ".join(features)
         chat_completion = client.chat.completions.create(
             messages=[
-                {"role": "system", "content": "You are a helpful assistant that summarizes product features."},
-                {"role": "user", "content": f"Summarize the following product features in exactly 3 concise bullet points, and do not include any introductory text or phrases: {text}"}
+                {"role": "system", "content": "You are an expert summarizer."},
+                {"role": "user", "content": f"Summarize the following features into three short, concise bullet points, and do not return any introductory text: {features_text}"}
             ],
             model="llama3-8b-8192"
         )
-
-        # Parse and handle the response correctly
         if chat_completion.choices and len(chat_completion.choices) > 0:
             summary = chat_completion.choices[0].message.content
-            # Remove any empty lines and avoid unwanted phrases
-            bullet_points = [point.strip() for point in summary.split('\n') if point.strip() and "Here" not in point]
-            return bullet_points[:3]  # Limit to 3 bullet points
+            return summary.strip().split('\n')[:3]  # Return the top 3 points
         else:
             raise ValueError("Unexpected response format from Groq API")
     except Exception as e:
         print(f"Error summarizing features with Groq API: {e}")
-        return features[:3]  # Fallback to the first 3 original features if summarization fails
+        return ["Error generating summary."]
 
+def analyze_product_with_groq(product):
+    """
+    Analyzes a product's details using Groq API and provides pros/cons and best-suited consumer.
+    """
+    try:
+        # Combine all product details
+        product_details = (
+            f"Name: {product['name']}, Price: {product['price']}, Rating: {product['rating']}, "
+            f"Reviews: {product['reviews']}, Features: {'; '.join(product['features'])}, "
+            f"Availability: {product['availability']}, Delivery Info: {product['delivery_info']}"
+        )
+        
+        # Make a Groq API call to analyze the product
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "You are an expert product reviewer."},
+                {"role": "user", "content": f"Please provide a detailed analysis of this product, including pros, cons, and what kind of consumer it would be best suited for. do not include any introductory text: {product_details}"}
+            ],
+            model="llama3-8b-8192"
+        )
 
-def process_and_summarize_features(comparison_data):
+        # Extract the analysis from the Groq response
+        if chat_completion.choices and len(chat_completion.choices) > 0:
+            analysis = chat_completion.choices[0].message.content
+            return analysis.strip()
+        else:
+            raise ValueError("Unexpected response format from Groq API")
+    except Exception as e:
+        print(f"Error analyzing product with Groq API: {e}")
+        return "Error generating analysis."
+
+def process_and_analyze_products(comparison_data):
     """
-    Summarizes the features of each product in the comparison data using Groq API.
+    Processes each product and analyzes it using Groq API.
     """
-    summarized_data = []
+    analyzed_data = []
     for product in comparison_data:
-        if product.get('features'):
-            summarized_features = summarize_features_with_groq(product['features'])
-            product['features'] = summarized_features  # Update with summarized features
-        summarized_data.append(product)
+        # Generate analysis for each product
+        analysis = analyze_product_with_groq(product)
+        product['analysis'] = analysis  # Add the analysis to the product data
 
-    return summarized_data
+        # Generate a 3-bullet-point summary for the product's features
+        if product.get('features'):
+            product['features_summary'] = summarize_features_with_groq(product['features'])
+        else:
+            product['features_summary'] = ["No features available"]
+
+        analyzed_data.append(product)
+    
+    return analyzed_data
 
 def compare_product(product_id):
     """
@@ -246,11 +276,11 @@ def compare_product(product_id):
                 # Add filtered products to the comparison
                 comparison_data.extend(additional_data_filtered)
 
-    # Summarize product features
-    summarized_data = process_and_summarize_features(comparison_data)
+    # Process and analyze products
+    analyzed_data = process_and_analyze_products(comparison_data)
 
     # Limit to show top 4-5 products including the original
-    return summarized_data[:5]
+    return analyzed_data[:5]
 
 # Example usage
 if __name__ == "__main__":
@@ -260,7 +290,7 @@ if __name__ == "__main__":
         comparison_data = compare_product(product_id)
         if comparison_data:
             for product in comparison_data:
-                print(f"Product Name: {product['name']}, Price: {product['price']}, URL: {product['url']}, Rating: {product.get('rating', 'N/A')}, Reviews: {product.get('reviews', 'N/A')}, Features: {product.get('features', 'N/A')}, Dimensions: {product.get('dimensions', 'N/A')}, Availability: {product.get('availability', 'N/A')}, Delivery Info: {product.get('delivery_info', 'N/A')}, Brand: {product.get('brand', 'N/A')}, Image URL: {product.get('image_url', 'N/A')}")
+                print(f"Product Name: {product['name']}, Price: {product['price']}, Analysis: {product.get('analysis', 'N/A')}, Features Summary: {product.get('features_summary', 'N/A')}")
         else:
             print("Failed to retrieve comparison data.")
     else:

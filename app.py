@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from scraper import compare_product, extract_id  # Update import to extract_id
+from scraper import compare_product, extract_id, analyze_product_with_groq  # Updated import to include analysis
 from database import insert_comparison, create_database
 import sqlite3
 
@@ -28,7 +28,11 @@ def compare_products():
                 if product['type'] == 'target':  # Only save the target product's price
                     insert_comparison(product_id, product['price'])
             
-            # Return the comparison data to the frontend
+            # Generate the analysis for each product using the Groq API
+            for product in comparison_data:
+                product['analysis'] = analyze_product_with_groq(product)  # Perform analysis for each product
+
+            # Return the comparison and analysis data to the frontend
             return jsonify({'comparison': comparison_data})
         else:
             return jsonify({'error': 'Failed to retrieve comparison data'}), 500
