@@ -28,6 +28,11 @@ document.getElementById('url-form').addEventListener('submit', async function (e
             displayToggleableComparison(data.comparison.slice(1)); // Display other products toggleable
             displayProductAnalysis(data.comparison); // Display product analysis (new feature)
 
+            // Display reviews summary using Gemini API
+            if (data.reviews_summary) {
+                displayReviewsSummary(data.reviews_summary); // Display the new review summary feature
+            }
+
             // Show "Your Product" section
             document.querySelector('.original-product-section').style.display = 'block';
         } else {
@@ -48,9 +53,11 @@ function clearPreviousContent() {
     const comparisonContainer = document.getElementById('comparison-container');
     const originalProductSection = document.getElementById('original-product');
     const analysisSection = document.getElementById('analysis-container');
+    const reviewsContainer = document.getElementById('reviews-container'); // Added for review summary
     comparisonContainer.innerHTML = '';  // Clear other products
     originalProductSection.innerHTML = ''; // Clear original product content
     analysisSection.innerHTML = ''; // Clear previous analysis content
+    reviewsContainer.innerHTML = ''; // Clear review summary content
 
     // Only remove the toggle box if it already exists to avoid duplicates
     const existingToggleBox = document.querySelector('.toggle-box');
@@ -118,8 +125,6 @@ function displayOriginalProduct(product) {
         productDiv.appendChild(summaryTitle);
         productDiv.appendChild(summaryList);
     }
-
-    // No "All Features" display here
 
     productDiv.appendChild(name);
     productDiv.appendChild(price);
@@ -317,5 +322,59 @@ function displayProductAnalysis(comparison) {
         analysisDiv.appendChild(analysisText);
 
         analysisContainer.appendChild(analysisDiv);
+    });
+}
+
+// New function to display reviews summary from Gemini API
+function displayReviewsSummary(reviews) {
+    const reviewsContainer = document.getElementById('reviews-container');
+
+    // Create a toggle box for the reviews section
+    let reviewsToggleBox = document.querySelector('.reviews-toggle-box');
+    if (!reviewsToggleBox) {
+        reviewsToggleBox = document.createElement('div');
+        reviewsToggleBox.classList.add('reviews-toggle-box');
+
+        const toggleHeader = document.createElement('div');
+        toggleHeader.classList.add('toggle-header');
+        toggleHeader.innerText = 'What Do Others Think?';
+
+        // Add arrow icon
+        const arrow = document.createElement('span');
+        arrow.innerHTML = '▼';
+        arrow.classList.add('toggle-arrow');
+        toggleHeader.appendChild(arrow);
+
+        reviewsToggleBox.appendChild(toggleHeader);
+        reviewsContainer.parentNode.insertBefore(reviewsToggleBox, reviewsContainer);
+
+        reviewsContainer.style.display = 'none';
+
+        // Toggle event to show/hide reviews summary
+        toggleHeader.addEventListener('click', function () {
+            if (reviewsContainer.style.display === 'none') {
+                reviewsContainer.style.display = 'block';
+                arrow.innerHTML = '▲';
+            } else {
+                reviewsContainer.style.display = 'none';
+                arrow.innerHTML = '▼';
+            }
+        });
+    }
+
+    reviewsContainer.innerHTML = '';
+    reviews.forEach(product => {
+        const reviewDiv = document.createElement('div');
+        reviewDiv.classList.add('review-product');
+
+        const name = document.createElement('h3');
+        name.innerText = `${product.name}: Review Summary`;
+
+        const reviewText = document.createElement('p');
+        reviewText.innerText = product.review_summary || 'No reviews available.';
+
+        reviewDiv.appendChild(name);
+        reviewDiv.appendChild(reviewText);
+        reviewsContainer.appendChild(reviewDiv);
     });
 }

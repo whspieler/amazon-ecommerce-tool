@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from scraper import compare_product, extract_id, analyze_product_with_groq  # Updated import to include analysis
+from scraper import compare_product, extract_id, analyze_product_with_groq, analyze_reviews_with_gemini  # Updated import to include review analysis
 from database import insert_comparison, create_database
 import sqlite3
 
@@ -32,8 +32,14 @@ def compare_products():
             for product in comparison_data:
                 product['analysis'] = analyze_product_with_groq(product)  # Perform analysis for each product
 
-            # Return the comparison and analysis data to the frontend
-            return jsonify({'comparison': comparison_data})
+            # Generate the reviews summary for each product using Gemini API
+            reviews_summary = analyze_reviews_with_gemini(comparison_data)
+
+            # Return the comparison, analysis, and reviews data to the frontend
+            return jsonify({
+                'comparison': comparison_data,
+                'reviews_summary': reviews_summary
+            })
         else:
             return jsonify({'error': 'Failed to retrieve comparison data'}), 500
     except Exception as e:

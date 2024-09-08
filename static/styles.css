@@ -57,7 +57,8 @@ button:hover {
 /* Hide by default and show after fetching */
 .original-product-section,
 .comparison-container,
-.analysis-container {
+.analysis-container,
+.reviews-container {
     display: none;
 }
 
@@ -193,6 +194,33 @@ button {
 /* Analysis content styling when opened */
 .analysis-container {
     background-color: transparent; /* Make sure the inner content has no background */
+    padding: 0;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+/* Reviews Toggle Box (Similar to the toggle box for other sections) */
+.reviews-toggle-box {
+    background-color: #a9daea; /* Light blue background */
+    color: #000;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 30px;
+    display: block;
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 18px;
+    transition: background-color 0.3s;
+}
+
+.reviews-toggle-box:hover {
+    background-color: #87cbd8;
+    color: white;
+}
+
+.reviews-container {
+    background-color: transparent;
     padding: 0;
     border-radius: 8px;
     margin-top: 20px;

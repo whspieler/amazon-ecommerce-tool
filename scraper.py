@@ -1,3 +1,4 @@
+import google.generativeai as genai
 import requests
 import time
 import json
@@ -11,6 +12,9 @@ BASE_URL = 'https://api.priceapi.com/v2/'
 # Groq API details
 groq_api_key = os.getenv('GROQ_API_KEY', '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')  # Can be set in env
 client = Client(api_key=groq_api_key)
+
+# Directly configure Gemini API with your provided key
+genai.configure(api_key='AIzaSyCXwlibA4A8m4OqjFU9xk6Ix-A_VqUKRbM')
 
 def extract_id(url):
     """
@@ -103,7 +107,7 @@ def fetch_results(results_url):
         print("Fetched Results: ", json.dumps(data, indent=4))
 
         comparison_data = []
-        additional_ids = []
+        additional_ids = set()  # Using a set to prevent duplicates
 
         if 'results' in data and len(data['results']) > 0:
             original_brand = None
@@ -134,17 +138,15 @@ def fetch_results(results_url):
                 if 'product_links' in content:
                     for link_type in ['variants', 'substitutes', 'sponsored']:
                         if content['product_links'].get(link_type):
-                            additional_ids.extend(content['product_links'][link_type])
+                            additional_ids.update(content['product_links'][link_type])
 
                 # Collect IDs from carousels
                 carousels = content.get('carousels', [])
                 for carousel in carousels:
                     for product in carousel.get('products', []):
-                        additional_ids.append(product['id'])
+                        additional_ids.add(product['id'])
 
-        # Remove duplicates and limit to top 4-5 additional IDs
-        additional_ids = list(set(additional_ids))[:5]
-        return comparison_data, additional_ids, original_brand
+        return comparison_data, list(additional_ids), original_brand
     except requests.RequestException as e:
         print(f"Error fetching results from PriceAPI: {e}")
         return [], [], None
@@ -169,6 +171,9 @@ def summarize_features_with_groq(features):
     Summarizes the product features into three concise bullet points using Groq API.
     """
     try:
+        if not features:
+            return ["No features available"]  # Handling empty features list
+
         features_text = "; ".join(features)
         chat_completion = client.chat.completions.create(
             messages=[
@@ -202,7 +207,7 @@ def analyze_product_with_groq(product):
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": "You are an expert product reviewer."},
-                {"role": "user", "content": f"Please provide a detailed analysis of this product, including pros, cons, and what kind of consumer it would be best suited for. do not include any introductory text: {product_details}"}
+                {"role": "user", "content": f"Please provide a detailed analysis of this product, including pros, cons, and what kind of consumer it would be best suited for. do not include any introductory text and make sure the text is center aligned with bullet points: {product_details}"}
             ],
             model="llama3-8b-8192"
         )
@@ -216,6 +221,36 @@ def analyze_product_with_groq(product):
     except Exception as e:
         print(f"Error analyzing product with Groq API: {e}")
         return "Error generating analysis."
+
+def analyze_reviews_with_gemini(products):
+    """
+    Analyzes the reviews of all products using Gemini API, providing the product link for context.
+    """
+    reviews_summary = []
+    for product in products:
+        # Combine product reviews and URL
+        product_reviews = f"Product: {product['name']}, URL: {product['url']}, Reviews: {product['reviews']}"
+
+        # Call Gemini API using google-generativeai SDK to summarize reviews
+        try:
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            response = model.generate_content(f"Summarize customer reviews for the product, highlighting what consumers like and dislike about the product, and do not include any introductory text: {product_reviews}")
+            summary = response.text
+
+            reviews_summary.append({
+                'name': product['name'],
+                'review_summary': summary,
+                'url': product['url']
+            })
+        except Exception as e:
+            print(f"Error analyzing reviews with Gemini API: {e}")
+            reviews_summary.append({
+                'name': product['name'],
+                'review_summary': 'Error summarizing reviews',
+                'url': product['url']
+            })
+
+    return reviews_summary
 
 def process_and_analyze_products(comparison_data):
     """
@@ -260,7 +295,7 @@ def compare_product(product_id):
     # Fetch details for additional IDs, limiting to top 4-5 similar products
     if additional_ids:
         print(f"Fetching additional details for IDs: {additional_ids}")
-        job_id = create_job(additional_ids)
+        job_id = create_job(list(additional_ids))  # Convert set to list
         if job_id:
             results_url = poll_job_status(job_id)
             if results_url:
@@ -281,17 +316,3 @@ def compare_product(product_id):
 
     # Limit to show top 4-5 products including the original
     return analyzed_data[:5]
-
-# Example usage
-if __name__ == "__main__":
-    product_url = "https://www.amazon.com/dp/B08N5WRWNW"
-    product_id = extract_id(product_url)
-    if product_id:
-        comparison_data = compare_product(product_id)
-        if comparison_data:
-            for product in comparison_data:
-                print(f"Product Name: {product['name']}, Price: {product['price']}, Analysis: {product.get('analysis', 'N/A')}, Features Summary: {product.get('features_summary', 'N/A')}")
-        else:
-            print("Failed to retrieve comparison data.")
-    else:
-        print("Invalid Amazon URL provided.")
