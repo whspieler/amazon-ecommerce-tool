@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from scraper import compare_product, extract_id, analyze_product_with_groq, analyze_reviews_with_gemini  # Updated import to include review analysis
+from scraper import compare_product, extract_id, analyze_product_with_groq, analyze_reviews_with_gemini, search_products_by_term, summarize_product_features_with_gemini  # Updated import
 from database import insert_comparison, create_database
 import sqlite3
 
@@ -45,6 +45,32 @@ def compare_products():
     except Exception as e:
         print(f"Error occurred: {e}")
         return jsonify({'error': 'An error occurred while processing your request.'}), 500
+
+# New route for the "Didn't Find What You're Looking For?" feature
+@app.route('/price-api/search', methods=['POST'])
+def search_products():
+    try:
+        data = request.json
+        search_term = data.get('values', None)
+
+        if not search_term:
+            return jsonify({'error': 'No search term provided'}), 400
+
+        # Use scraper.py's search_products_by_term function to search products
+        search_results = search_products_by_term(search_term)
+
+        # Summarize key features using Gemini for each product
+        for product in search_results:
+            product['key_features'] = summarize_product_features_with_gemini(product['url'])
+
+        if search_results:
+            return jsonify({'products': search_results})
+        else:
+            return jsonify({'error': 'No products found for the given search term'}), 500
+
+    except Exception as e:
+        print(f"Error occurred while searching for products: {e}")
+        return jsonify({'error': 'An error occurred while processing your search request.'}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amazon Product Comparison</title>
+    <title>Amazon E-Commerce Tool</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Amazon Product Comparison Tool</h1>
-        
+        <header>
+            <h1>Amazon E-Commerce Tool</h1>
+            <p>Your one-stop solution for comparing Amazon products, analyzing reviews, and finding the best deals. Enter an Amazon product URL to get started:</p>
+        </header>
+
         <!-- URL Input Form -->
         <form id="url-form">
             <input type="text" id="url-input" placeholder="Enter Amazon Product URL" required>
@@ -22,14 +25,14 @@
 
         <!-- Original Product Display -->
         <div class="original-product-section" style="display: none;">
-            <h2>Your Product:</h2>
+            <h2>YOUR PRODUCT:</h2>
             <div class="original-product" id="original-product">
                 <!-- This will be populated with the original product details -->
             </div>
         </div>
 
         <!-- Toggleable Other Products Section -->
-        <div class="toggle-box" id="toggle-header" style="display: none;">
+        <div class="toggle-box" id="comparison-toggle-header" style="display: none;">
             Other Products You Should Consider
             <span class="toggle-arrow">▼</span>
         </div>
@@ -40,13 +43,38 @@
         </div>
 
         <!-- New Analysis Section (Hidden by default) -->
+        <div class="toggle-box" id="analysis-toggle-header" style="display: none;">
+            Which Product is Best For You?
+            <span class="toggle-arrow">▼</span>
+        </div>
         <div class="analysis-container" id="analysis-container" style="display: none;">
             <!-- This will be populated with product analysis from the Groq API -->
         </div>
 
         <!-- New Reviews Summary Section (Hidden by default) -->
+        <div class="toggle-box" id="reviews-toggle-header" style="display: none;">
+            What Do Others Think?
+            <span class="toggle-arrow">▼</span>
+        </div>
         <div class="reviews-container" id="reviews-container" style="display: none;">
             <!-- This will be populated with review summaries from the Gemini API -->
+        </div>
+
+        <!-- Toggleable Didn't Find What You're Looking For Section -->
+        <div class="toggle-box" id="didnt-find-toggle-header" style="display: none;">
+            Didn't Find What You're Looking For?
+            <span class="toggle-arrow">▼</span>
+        </div>
+
+        <!-- Didn't Find Container (Hidden by default) -->
+        <div class="didnt-find-container" id="didnt-find-container" style="display: none;">
+            <form id="didnt-find-form">
+                <input type="text" id="product-requirements" placeholder="Enter your product requirements" required>
+                <button type="submit">Search</button>
+            </form>
+            <div id="didnt-find-results" class="other-products">
+                <!-- This will be populated with product details from the Price API -->
+            </div>
         </div>
     </div>
 

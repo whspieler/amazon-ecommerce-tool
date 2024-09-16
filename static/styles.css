@@ -1,6 +1,5 @@
-/* General Styling */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', sans-serif;
     background-color: #f4f4f4;
     margin: 0;
     padding: 0;
@@ -12,32 +11,34 @@ body {
 
 .container {
     background-color: white;
-    padding: 20px;
+    padding: 30px;  
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 80%;
-    max-width: 1200px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);  
+    width: 100%;  
+    max-width: 1400px;  
     text-align: center;
-    margin-top: 20px;
+    margin-top: 30px;  
     position: relative;
 }
 
 input[type="text"] {
-    width: calc(100% - 22px);
-    padding: 10px;
-    margin-bottom: 10px;
+    width: calc(100% - 20px); 
+    padding: 15px; 
+    font-size: 1.2rem;  
+    margin-bottom: 20px; 
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 button {
-    padding: 10px 20px;
+    padding: 12px 25px;  
+    font-size: 1.1rem;  
     background-color: #007bff;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    margin: 5px;
+    margin: 10px;
     transition: background-color 0.3s;
 }
 
@@ -47,26 +48,112 @@ button:hover {
 
 #loading-indicator {
     display: none;
-    margin-top: 10px;
-    text-align: center;
+    position: absolute;
+    bottom: 20px; /* Adjust this value as needed */
+    left: 50%;
+    transform: translateX(-50%);
     color: #007bff;
     font-size: 18px;
     font-weight: bold;
+    text-align: center;
 }
 
 /* Hide by default and show after fetching */
 .original-product-section,
 .comparison-container,
 .analysis-container,
-.reviews-container {
+.reviews-container,
+.didnt-find-container {
     display: none;
 }
 
+/* Styling for "Your Product" Section */
+.original-product-section {
+    display: block;
+    margin-top: 30px;
+    padding: 30px;
+    background-color: #f7f9fc; /* Light background color for better contrast */
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.original-product-section h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 .original-product img {
-    max-width: 100%;
-    max-height: 300px;
+    max-width: 80%;
+    max-height: 400px;
+    margin-bottom: 20px;
     object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.original-product h3 {
+    font-size: 2rem;
+    color: #007bff;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.original-product p {
+    font-size: 1.5rem;
+    color: #333;
+    margin: 15px 0;
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+.original-product a {
+    display: inline-block;
+    padding: 12px 25px;
+    font-size: 1.2rem;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
     border-radius: 8px;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+
+.original-product a:hover {
+    background-color: #0056b3;
+}
+
+/* End of "Your Product" Section */
+
+header {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 3rem;
+    font-weight: bold;
+    background: linear-gradient(to right, #007bff, #00c6ff);
+    -webkit-background-clip: text;
+    color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+}
+
+header p {
+    font-size: 1.4rem;
+    color: #000;
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.8;
+    font-weight: 500;
+    text-align: justify;
+    padding: 0 10px;
 }
 
 h2, h3 {
@@ -79,7 +166,6 @@ h3 {
     font-size: 22px;
 }
 
-/* Toggle Box Styling */
 .toggle-box {
     background-color: #a9daea; /* Light blue background */
     color: #000; /* Darker text for contrast */
@@ -87,10 +173,10 @@ h3 {
     padding: 15px;
     margin-top: 30px;
     display: block;
-    text-align: center; /* Center the text */
+    text-align: center;
     cursor: pointer;
     font-weight: bold;
-    font-size: 18px;
+    font-size: 25px;
     transition: background-color 0.3s;
 }
 
@@ -101,18 +187,19 @@ h3 {
 
 .toggle-arrow {
     display: inline-block;
-    font-size: 24px;
+    font-size: 28px;
     margin-left: 10px;
     vertical-align: middle;
 }
 
 /* Product section styling */
-.other-products {
+.other-products,
+#didnt-find-results {
     display: none;
     margin-top: 20px;
-    grid-template-columns: repeat(4, 1fr); /* Display 4 products side by side */
+    grid-template-columns: repeat(4, 1fr);
     gap: 15px;
-    background-color: transparent; /* Ensure the background is transparent after expanding */
+    background-color: transparent;
 }
 
 .product {
@@ -174,11 +261,11 @@ button {
 
 /* Styling for the "Which Product is Best For You?" text */
 .analysis-toggle-box {
-    background-color: #a9daea; /* Same light blue as the toggle box */
+    background-color: #a9daea;
     color: #000;
     border-radius: 8px;
     padding: 15px;
-    margin-top: 40px; /* Increased margin to avoid overlap */
+    margin-top: 40px;
     text-align: center;
     cursor: pointer;
     font-weight: bold;
@@ -191,17 +278,15 @@ button {
     color: white;
 }
 
-/* Analysis content styling when opened */
 .analysis-container {
-    background-color: transparent; /* Make sure the inner content has no background */
+    background-color: transparent;
     padding: 0;
     border-radius: 8px;
     margin-top: 20px;
 }
 
-/* Reviews Toggle Box (Similar to the toggle box for other sections) */
 .reviews-toggle-box {
-    background-color: #a9daea; /* Light blue background */
+    background-color: #a9daea;
     color: #000;
     border-radius: 8px;
     padding: 15px;
@@ -226,9 +311,55 @@ button {
     margin-top: 20px;
 }
 
+#didnt-find-container {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    background-color: transparent;
+}
+
+#didnt-find-results {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+}
+
+#didnt-find-results .product {
+    max-height: 700px; 
+    overflow: visible; 
+    padding: 10px; 
+}
+
+#didnt-find-form input {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#didnt-find-form button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+    transition: background-color 0.3s;
+}
+
+#didnt-find-form button:hover {
+    background-color: #0056b3;
+}
+
 /* Responsive layout */
 @media screen and (max-width: 768px) {
-    .comparison-container {
+    .comparison-container,
+    #didnt-find-results {
         grid-template-columns: 1fr;
         gap: 10px;
     }
@@ -236,4 +367,37 @@ button {
     .other-products {
         grid-template-columns: 1fr;
     }
+}
+
+/* Unique Styling for Toggle Boxes for Each Section */
+#comparison-toggle-header {
+    background-color: #f0e68c;
+}
+
+#analysis-toggle-header {
+    background-color: #d3ffd3;
+}
+
+#reviews-toggle-header {
+    background-color: #ffddcc;
+}
+
+#didnt-find-toggle-header {
+    background-color: #ccffdd;
+}
+
+#comparison-toggle-header:hover {
+    background-color: #e8c92d;
+}
+
+#analysis-toggle-header:hover {
+    background-color: #a5dfa5;
+}
+
+#reviews-toggle-header:hover {
+    background-color: #ffba99;
+}
+
+#didnt-find-toggle-header:hover {
+    background-color: #99ffcc;
 }

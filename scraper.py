@@ -6,7 +6,7 @@ import os
 from groq import Client
 
 # PriceAPI details
-API_KEY = 'MAREZOKQLLDVUQHSXPBEAVZDRKPOHXWRHFXWPTYZPPIKPBFQSVAICKHPOAVQNNIH'
+API_KEY = 'JRGAWLNYUFTIVBBTDCKYJFNLIERTXJEVUWRJFHVKUMSTKEBHXKVVOVSVJRUNBJOG'
 BASE_URL = 'https://api.priceapi.com/v2/'
 
 # Groq API details
@@ -19,13 +19,20 @@ genai.configure(api_key='AIzaSyCXwlibA4A8m4OqjFU9xk6Ix-A_VqUKRbM')
 def extract_id(url):
     """
     Extracts the ID (ASIN) from a given Amazon product URL.
+    This function now supports both "/dp/" and "/gp/product/" style URLs.
     """
     try:
-        product_id = url.split('/dp/')[1].split('/')[0].split('?')[0]
+        if '/dp/' in url:
+            product_id = url.split('/dp/')[1].split('/')[0].split('?')[0]
+        elif '/gp/product/' in url:
+            product_id = url.split('/gp/product/')[1].split('/')[0].split('?')[0]
+        else:
+            raise ValueError("Failed to extract ID from the URL format.")
         return product_id
     except IndexError:
         print("Failed to extract ID from the URL.")
         return None
+
 
 def create_job(ids):
     """
@@ -108,6 +115,7 @@ def fetch_results(results_url):
 
         comparison_data = []
         additional_ids = set()  # Using a set to prevent duplicates
+        similar_brand_ids = []  # Store similar brand product IDs separately
 
         if 'results' in data and len(data['results']) > 0:
             original_brand = None
@@ -134,25 +142,32 @@ def fetch_results(results_url):
                     'type': 'target'
                 })
 
-                # Collect additional IDs from related content
+                # Collect IDs from the "Similar brands on Amazon" section
+                if 'carousels' in content:
+                    for carousel in content.get('carousels', []):
+                        if carousel.get('title') == 'Similar brands on Amazon':
+                            for product in carousel.get('products', []):
+                                similar_brand_ids.append(product['id'])
+
+                # Collect additional IDs from related content (only if they are not similar brands)
                 if 'product_links' in content:
                     for link_type in ['variants', 'substitutes', 'sponsored']:
                         if content['product_links'].get(link_type):
                             additional_ids.update(content['product_links'][link_type])
 
-                # Collect IDs from carousels
-                carousels = content.get('carousels', [])
-                for carousel in carousels:
-                    for product in carousel.get('products', []):
-                        additional_ids.add(product['id'])
+        # If we have similar brand IDs, prefer those over the additional IDs
+        if similar_brand_ids:
+            return comparison_data, similar_brand_ids[:5], original_brand
+        else:
+            return comparison_data, list(additional_ids)[:5], original_brand  # Limit additional IDs to 5
 
-        return comparison_data, list(additional_ids), original_brand
     except requests.RequestException as e:
         print(f"Error fetching results from PriceAPI: {e}")
         return [], [], None
     except ValueError as e:
         print(f"Error parsing JSON response: {e}")
         return [], [], None
+
 
 def filter_and_fetch_different_brand_products(additional_data, original_brand):
     """
@@ -178,7 +193,7 @@ def summarize_features_with_groq(features):
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": "You are an expert summarizer."},
-                {"role": "user", "content": f"Summarize the following features into three short, concise bullet points, and do not return any introductory text: {features_text}"}
+                {"role": "user", "content": f"Summarize the following features into three short, concise bullet points (with this symbol: '•'), and *important* DO NOT return any introductory text: {features_text}"}
             ],
             model="llama3-8b-8192"
         )
@@ -207,7 +222,7 @@ def analyze_product_with_groq(product):
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": "You are an expert product reviewer."},
-                {"role": "user", "content": f"Please provide a detailed analysis of this product, including pros, cons, and what kind of consumer it would be best suited for. do not include any introductory text and make sure the text is center aligned with bullet points: {product_details}"}
+                {"role": "user", "content": f"Please provide a detailed analysis of this product, ONLY including pros, cons, and what kind of consumer it would be best suited for (with these headers surrounded by asterisks no bullet points). **do not include any introductory text** and make sure the text is center aligned with bullet points and with one space from the headers, and **do not return the title of the product** and please ONLY include pros, cons, and best suited for: {product_details}"}
             ],
             model="llama3-8b-8192"
         )
@@ -234,8 +249,15 @@ def analyze_reviews_with_gemini(products):
         # Call Gemini API using google-generativeai SDK to summarize reviews
         try:
             model = genai.GenerativeModel("gemini-1.5-flash")
-            response = model.generate_content(f"Summarize customer reviews for the product, highlighting what consumers like and dislike about the product, and do not include any introductory text: {product_reviews}")
-            summary = response.text
+            response = model.generate_content(f"Summarize customer reviews for the product, highlighting what consumers like and dislike about the product, and do not include any introductory text and the format should be a header for likes and dislikes (surrounded with asterisks) with a bullet point (with this symbol: '•') followed by the information: {product_reviews}")
+
+            # Check for valid response and handle blocked/empty responses
+            if response and hasattr(response, 'text') and response.text:
+                summary = response.text
+            else:
+                print(f"Blocked or empty response from Gemini API for product {product['name']}")
+                # Retry with a separate API call for that product
+                summary = retry_fetch_product_details_with_gemini(product['url'])
 
             reviews_summary.append({
                 'name': product['name'],
@@ -251,6 +273,46 @@ def analyze_reviews_with_gemini(products):
             })
 
     return reviews_summary
+
+def retry_fetch_product_details_with_gemini(product_url):
+    """
+    If the first Gemini API call fails or is blocked, retry fetching the product details with a new call.
+    """
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        prompt = f"Generate detailed product insights and customer feedback from this Amazon product URL: {product_url}, and summarize into three concise bullet points, max is 100 characters per bullet point."
+        response = model.generate_content(prompt)
+
+        if response and hasattr(response, 'text') and response.text:
+            return response.text.strip()
+        else:
+            print(f"Second attempt to fetch product details from Gemini failed for {product_url}")
+            return "Error generating detailed product insights."
+    except Exception as e:
+        print(f"Retry error fetching Gemini details: {e}")
+        return "Error generating detailed product insights."
+
+def summarize_product_features_with_gemini(product_url):
+    """
+    Uses Gemini AI to generate three key bullet points of information about a product based on its Amazon URL.
+    """
+    try:
+        # Call Gemini API to summarize the product features
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        prompt = f"Generate a list of three short, concise key bullet points (aim for 10 words per bullet point) summarizing the product from this Amazon URL, and please do not include any introductory text and the format should be a bullet point followed by the information, do not include any asterisk introduction for each bullet point either: {product_url}"
+        response = model.generate_content(prompt)
+
+        # Handle empty or blocked responses gracefully
+        if response and hasattr(response, 'text') and response.text:
+            # Extract bullet points
+            summary = response.text.strip().split('\n')[:3]
+            return summary if summary else ["No key features found."]
+        else:
+            print(f"Blocked or empty response from Gemini API for URL {product_url}")
+            return ["Error: No valid content returned."]
+    except Exception as e:
+        print(f"Error summarizing product features with Gemini: {e}")
+        return ["Error generating key features."]
 
 def process_and_analyze_products(comparison_data):
     """
@@ -294,8 +356,8 @@ def compare_product(product_id):
 
     # Fetch details for additional IDs, limiting to top 4-5 similar products
     if additional_ids:
-        print(f"Fetching additional details for IDs: {additional_ids}")
-        job_id = create_job(list(additional_ids))  # Convert set to list
+        print(f"Fetching additional details for IDs: {additional_ids[:5]}")  # Limit to 5 IDs
+        job_id = create_job(list(additional_ids[:5]))  # Limit the second call to 5 IDs
         if job_id:
             results_url = poll_job_status(job_id)
             if results_url:
@@ -316,3 +378,83 @@ def compare_product(product_id):
 
     # Limit to show top 4-5 products including the original
     return analyzed_data[:5]
+
+# New independent function for "Didn't Find What You're Looking For?" feature
+def create_search_job(search_term):
+    """
+    Creates a job for searching products based on a search term.
+    """
+    endpoint = BASE_URL + 'jobs'
+    payload = {
+        'token': API_KEY,
+        'source': 'amazon',
+        'country': 'us',
+        'topic': 'search_results',  # Using 'search_results' topic
+        'key': 'term',  # Using 'term' as the key
+        'values': search_term,  # The search term entered by the user
+    }
+
+    try:
+        response = requests.post(endpoint, data=payload)
+        response.raise_for_status()
+        data = response.json()
+
+        if 'job_id' in data:
+            return data['job_id']
+        else:
+            print(f"Job creation failed: {data}")
+            return None
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}")
+    except requests.exceptions.RequestException as req_err:
+        print(f"Request exception occurred: {req_err}")
+    return None
+
+def fetch_search_results(results_url):
+    """
+    Fetches and parses the search results from a finished job.
+    """
+    try:
+        response = requests.get(results_url)
+        response.raise_for_status()
+        data = response.json()
+
+        products = []
+        if 'results' in data and len(data['results']) > 0:
+            for result in data['results']:
+                # Access the `content` key and extract the `search_results` array
+                search_results = result.get('content', {}).get('search_results', [])
+
+                # Iterate over the search results and extract relevant fields
+                for product in search_results:
+                    products.append({
+                        'name': product.get('name', 'N/A'),
+                        'price': product.get('min_price', 'N/A'),
+                        'url': product.get('url', 'N/A'),
+                        'rating': product.get('review_rating', 'N/A'),
+                        'reviews': product.get('review_count', 'N/A'),
+                        'image_url': product.get('image_url', 'https://via.placeholder.com/150'),
+                    })
+        return products
+    except requests.RequestException as e:
+        print(f"Error fetching search results from PriceAPI: {e}")
+        return []
+
+
+def search_products_by_term(search_term):
+    """
+    Orchestrates the process of creating a search job, polling job status, and retrieving search results.
+    """
+    # Create a search job using the search term
+    job_id = create_search_job(search_term)
+    if not job_id:
+        return []
+
+    # Poll the job status until it's finished
+    results_url = poll_job_status(job_id)
+    if not results_url:
+        return []
+
+    # Fetch and return the search results
+    search_results = fetch_search_results(results_url)
+    return search_results
